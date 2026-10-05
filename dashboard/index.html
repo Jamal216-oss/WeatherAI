@@ -538,6 +538,137 @@
                 font-size: 25px;
             }
         }
+
+        /* =========================
+           ANNUAL WEATHER
+        ========================= */
+
+        .annual-controls {
+            background: white;
+            padding: 18px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            box-shadow: 0 5px 18px rgba(15,23,42,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .annual-controls-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .annual-controls label {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .year-select {
+            width: auto;
+            min-width: 120px;
+            padding: 11px 13px;
+        }
+
+        .clock-box {
+            text-align: right;
+        }
+
+        .clock-label {
+            color: var(--muted);
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+
+        .live-clock {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .annual-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .annual-summary .card {
+            border-top: 4px solid var(--primary);
+        }
+
+        .annual-note {
+            color: var(--muted);
+            font-size: 13px;
+            margin: -5px 0 16px;
+        }
+
+        .annual-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 20px;
+        }
+
+        .annual-chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            box-shadow: 0 5px 18px rgba(15,23,42,0.05);
+        }
+
+        .annual-chart-card h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .annual-chart-container {
+            position: relative;
+            height: 330px;
+        }
+
+        .annual-status {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 9px;
+            background: #f8fafc;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .refresh-info {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        @media (max-width: 700px) {
+            .annual-charts {
+                grid-template-columns: 1fr;
+            }
+
+            .annual-chart-container {
+                height: 280px;
+            }
+
+            .clock-box {
+                width: 100%;
+                text-align: left;
+            }
+
+            .annual-controls-left {
+                width: 100%;
+            }
+
+            .year-select {
+                flex: 1;
+            }
+        }
+
     </style>
 </head>
 
@@ -1066,6 +1197,119 @@
 
     </div>
 
+
+    <!-- =========================
+         ANNUAL WEATHER STATISTICS
+    ========================= -->
+
+    <h2 class="section-title">
+        📅 Annual Weather Statistics
+    </h2>
+
+    <div class="annual-controls">
+
+        <div class="annual-controls-left">
+            <label for="annualYear">Select Year:</label>
+
+            <select id="annualYear" class="year-select">
+            </select>
+
+            <button id="annualButton" onclick="loadAnnualWeather()">
+                📊 Analyze Year
+            </button>
+
+            <span class="refresh-info">
+                Auto-refresh: every 5 minutes
+            </span>
+        </div>
+
+        <div class="clock-box">
+            <div class="clock-label">LOCAL TIME</div>
+            <div class="live-clock" id="liveClock">--:--:--</div>
+        </div>
+
+    </div>
+
+    <div class="annual-summary">
+
+        <div class="card">
+            <div class="card-title">🌡️ Annual Average Temperature</div>
+            <div class="card-value" id="annualAvgTemp">--</div>
+            <div class="card-subtitle">Average across the selected year</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">🔥 Maximum Temperature</div>
+            <div class="card-value" id="annualMaxTemp">--</div>
+            <div class="card-subtitle">Highest recorded daily temperature</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">❄️ Minimum Temperature</div>
+            <div class="card-value" id="annualMinTemp">--</div>
+            <div class="card-subtitle">Lowest recorded daily temperature</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">🌧️ Total Rainfall</div>
+            <div class="card-value" id="annualRainfall">--</div>
+            <div class="card-subtitle">Total precipitation in mm</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">☔ Rainy Days</div>
+            <div class="card-value" id="annualRainyDays">--</div>
+            <div class="card-subtitle">Days with recorded rain</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">💨 Maximum Wind</div>
+            <div class="card-value" id="annualMaxWind">--</div>
+            <div class="card-subtitle">Maximum daily wind speed</div>
+        </div>
+
+    </div>
+
+    <div class="annual-note">
+        Historical weather statistics are retrieved for the selected location and year.
+    </div>
+
+    <div class="annual-charts">
+
+        <div class="annual-chart-card">
+            <h3>🌡️ Monthly Temperature Statistics</h3>
+            <div class="annual-chart-container">
+                <canvas id="annualTemperatureChart"></canvas>
+            </div>
+        </div>
+
+        <div class="annual-chart-card">
+            <h3>🌧️ Monthly Rainfall</h3>
+            <div class="annual-chart-container">
+                <canvas id="annualRainfallChart"></canvas>
+            </div>
+        </div>
+
+        <div class="annual-chart-card">
+            <h3>☔ Rainy vs Dry Days</h3>
+            <div class="annual-chart-container">
+                <canvas id="annualRainDaysChart"></canvas>
+            </div>
+        </div>
+
+        <div class="annual-chart-card">
+            <h3>💨 Monthly Wind Statistics</h3>
+            <div class="annual-chart-container">
+                <canvas id="annualWindChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="annualStatus" class="annual-status">
+        Select a year to load annual weather statistics.
+    </div>
+
 </div>
 
 
@@ -1241,6 +1485,12 @@ async function searchCity() {
         const longitude =
             Number(place.longitude);
 
+        setSelectedLocation(
+            latitude,
+            longitude,
+            place.timezone || "UTC"
+        );
+
 
         let name =
             place.name || city;
@@ -1281,6 +1531,8 @@ async function searchCity() {
             longitude
         );
 
+        await loadAnnualWeather();
+
 
     } catch (error) {
 
@@ -1309,6 +1561,12 @@ async function loadWeather(
     latitude,
     longitude
 ) {
+
+    setSelectedLocation(
+        latitude,
+        longitude,
+        selectedTimezone
+    );
 
     try {
 
@@ -2327,6 +2585,944 @@ function getIntensityClass(
 }
 
 
+
+/* =========================================================
+   ANNUAL WEATHER + LIVE CLOCK
+========================================================= */
+
+let annualTemperatureChart = null;
+let annualRainfallChart = null;
+let annualRainDaysChart = null;
+let annualWindChart = null;
+
+let selectedLatitude = -6.8235;
+let selectedLongitude = 39.2695;
+let selectedTimezone = "Africa/Dar_es_Salaam";
+let autoRefreshTimer = null;
+let annualRefreshTimer = null;
+
+
+/* ---------------------------------------------------------
+   YEAR SELECTOR
+--------------------------------------------------------- */
+
+function initializeYearSelector() {
+
+    const select = document.getElementById("annualYear");
+
+    if (!select) {
+        return;
+    }
+
+    const currentYear = new Date().getFullYear();
+
+    select.innerHTML = "";
+
+    for (let year = currentYear; year >= currentYear - 10; year--) {
+
+        const option = document.createElement("option");
+
+        option.value = year;
+        option.textContent = year;
+
+        if (year === currentYear) {
+            option.selected = true;
+        }
+
+        select.appendChild(option);
+    }
+}
+
+
+/* ---------------------------------------------------------
+   LIVE LOCATION CLOCK
+--------------------------------------------------------- */
+
+function updateLiveClock() {
+
+    const clock = document.getElementById("liveClock");
+
+    if (!clock) {
+        return;
+    }
+
+    try {
+
+        const now = new Date();
+
+        clock.textContent =
+            new Intl.DateTimeFormat(
+                "en-GB",
+                {
+                    timeZone: selectedTimezone || undefined,
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false
+                }
+            ).format(now);
+
+    } catch (error) {
+
+        clock.textContent =
+            new Date().toLocaleTimeString(
+                [],
+                {
+                    hour12: false
+                }
+            );
+
+    }
+}
+
+
+/* ---------------------------------------------------------
+   ANNUAL WEATHER
+--------------------------------------------------------- */
+
+async function loadAnnualWeather() {
+
+    const yearElement =
+        document.getElementById("annualYear");
+
+    const status =
+        document.getElementById("annualStatus");
+
+    const button =
+        document.getElementById("annualButton");
+
+    if (!yearElement) {
+        return;
+    }
+
+    const year =
+        Number(yearElement.value);
+
+    if (!Number.isFinite(year)) {
+        return;
+    }
+
+    try {
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = "⏳ Loading...";
+        }
+
+        if (status) {
+            status.textContent =
+                "Loading historical weather statistics...";
+        }
+
+        const url =
+            API_URL +
+            "/annual-weather" +
+            "?latitude=" +
+            encodeURIComponent(selectedLatitude) +
+            "&longitude=" +
+            encodeURIComponent(selectedLongitude) +
+            "&year=" +
+            encodeURIComponent(year);
+
+        const response =
+            await fetch(url);
+
+        if (!response.ok) {
+
+            const errorData =
+                await response.json()
+                    .catch(() => ({}));
+
+            throw new Error(
+                errorData.detail ||
+                "Annual weather request failed."
+            );
+        }
+
+        const data =
+            await response.json();
+
+        updateAnnualWeather(data);
+
+        if (status) {
+            status.textContent =
+                "Annual statistics updated for " +
+                year +
+                ".";
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Annual weather error:",
+            error
+        );
+
+        if (status) {
+            status.textContent =
+                error.message ||
+                "Unable to load annual weather statistics.";
+        }
+
+    } finally {
+
+        if (button) {
+            button.disabled = false;
+            button.textContent = "📊 Analyze Year";
+        }
+
+    }
+}
+
+
+/* ---------------------------------------------------------
+   UPDATE ANNUAL WEATHER
+--------------------------------------------------------- */
+
+function updateAnnualWeather(data) {
+
+    const monthly =
+        data.monthly ||
+        data.monthly_data ||
+        data.months ||
+        [];
+
+    const summary =
+        data.annual_summary ||
+        data.summary ||
+        data.annual ||
+        {};
+
+    const rows =
+        Array.isArray(monthly)
+            ? monthly
+            : [];
+
+    updateAnnualSummary(
+        summary,
+        rows
+    );
+
+    updateAnnualCharts(rows);
+}
+
+
+/* ---------------------------------------------------------
+   ANNUAL SUMMARY
+--------------------------------------------------------- */
+
+function updateAnnualSummary(
+    summary,
+    rows
+) {
+
+    const avgTemp =
+        firstValue(
+            summary.average_temperature,
+            summary.avg_temperature,
+            summary.annual_average_temperature,
+            average(
+                rows.map(
+                    row => numberValue(
+                        row.average_temperature,
+                        row.avg_temperature
+                    )
+                )
+            )
+        );
+
+    const maxTemp =
+        firstValue(
+            summary.maximum_temperature,
+            summary.max_temperature,
+            summary.annual_maximum_temperature,
+            maxOf(
+                rows.map(
+                    row => numberValue(
+                        row.maximum_temperature,
+                        row.max_temperature
+                    )
+                )
+            )
+        );
+
+    const minTemp =
+        firstValue(
+            summary.minimum_temperature,
+            summary.min_temperature,
+            summary.annual_minimum_temperature,
+            minOf(
+                rows.map(
+                    row => numberValue(
+                        row.minimum_temperature,
+                        row.min_temperature
+                    )
+                )
+            )
+        );
+
+    const rainfall =
+        firstValue(
+            summary.total_rainfall_mm,
+            summary.total_precipitation_mm,
+            summary.rainfall_mm,
+            summary.total_rain_mm,
+            sum(
+                rows.map(
+                    row => numberValue(
+                        row.rainfall_mm,
+                        row.precipitation_mm,
+                        row.rain_mm,
+                        row.precipitation
+                    )
+                )
+            )
+        );
+
+    const rainyDays =
+        firstValue(
+            summary.rainy_days,
+            summary.total_rainy_days,
+            sum(
+                rows.map(
+                    row => numberValue(
+                        row.rainy_days
+                    )
+                )
+            )
+        );
+
+    const maxWind =
+        firstValue(
+            summary.maximum_wind_speed,
+            summary.max_wind_speed,
+            summary.annual_maximum_wind_speed,
+            maxOf(
+                rows.map(
+                    row => numberValue(
+                        row.maximum_wind_speed,
+                        row.max_wind_speed
+                    )
+                )
+            )
+        );
+
+    setText(
+        "annualAvgTemp",
+        displayNumber(avgTemp, " °C")
+    );
+
+    setText(
+        "annualMaxTemp",
+        displayNumber(maxTemp, " °C")
+    );
+
+    setText(
+        "annualMinTemp",
+        displayNumber(minTemp, " °C")
+    );
+
+    setText(
+        "annualRainfall",
+        displayNumber(rainfall, " mm")
+    );
+
+    setText(
+        "annualRainyDays",
+        displayNumber(rainyDays, " days")
+    );
+
+    setText(
+        "annualMaxWind",
+        displayNumber(maxWind, " km/h")
+    );
+}
+
+
+/* ---------------------------------------------------------
+   ANNUAL CHARTS
+--------------------------------------------------------- */
+
+function updateAnnualCharts(rows) {
+
+    if (!rows.length) {
+        return;
+    }
+
+    const labels =
+        rows.map(
+            (row, index) =>
+                row.month ||
+                row.month_name ||
+                monthLabel(
+                    row.month_number,
+                    index
+                )
+        );
+
+    const avgTemperature =
+        rows.map(
+            row => numberValue(
+                row.average_temperature,
+                row.avg_temperature,
+                row.temperature_mean
+            )
+        );
+
+    const maxTemperature =
+        rows.map(
+            row => numberValue(
+                row.maximum_temperature,
+                row.max_temperature,
+                row.temperature_max
+            )
+        );
+
+    const minTemperature =
+        rows.map(
+            row => numberValue(
+                row.minimum_temperature,
+                row.min_temperature,
+                row.temperature_min
+            )
+        );
+
+    const rainfall =
+        rows.map(
+            row => numberValue(
+                row.rainfall_mm,
+                row.precipitation_mm,
+                row.rain_mm,
+                row.precipitation
+            )
+        );
+
+    const rainyDays =
+        rows.map(
+            row => numberValue(
+                row.rainy_days
+            )
+        );
+
+    const dryDays =
+        rows.map(
+            row => numberValue(
+                row.dry_days
+            )
+        );
+
+    const averageWind =
+        rows.map(
+            row => numberValue(
+                row.average_wind_speed,
+                row.avg_wind_speed
+            )
+        );
+
+    const maximumWind =
+        rows.map(
+            row => numberValue(
+                row.maximum_wind_speed,
+                row.max_wind_speed
+            )
+        );
+
+
+    if (annualTemperatureChart) {
+        annualTemperatureChart.destroy();
+    }
+
+    if (annualRainfallChart) {
+        annualRainfallChart.destroy();
+    }
+
+    if (annualRainDaysChart) {
+        annualRainDaysChart.destroy();
+    }
+
+    if (annualWindChart) {
+        annualWindChart.destroy();
+    }
+
+
+    annualTemperatureChart =
+        new Chart(
+            document.getElementById(
+                "annualTemperatureChart"
+            ),
+            {
+                type: "line",
+
+                data: {
+                    labels: labels,
+
+                    datasets: [
+                        {
+                            label:
+                                "Average Temperature",
+
+                            data:
+                                avgTemperature,
+
+                            borderWidth: 3,
+
+                            tension: 0.3,
+
+                            pointRadius: 3
+                        },
+
+                        {
+                            label:
+                                "Maximum Temperature",
+
+                            data:
+                                maxTemperature,
+
+                            borderWidth: 2,
+
+                            tension: 0.3,
+
+                            pointRadius: 2
+                        },
+
+                        {
+                            label:
+                                "Minimum Temperature",
+
+                            data:
+                                minTemperature,
+
+                            borderWidth: 2,
+
+                            tension: 0.3,
+
+                            pointRadius: 2
+                        }
+                    ]
+                },
+
+                options: {
+                    responsive: true,
+
+                    maintainAspectRatio:
+                        false,
+
+                    interaction: {
+                        mode: "index",
+                        intersect: false
+                    },
+
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text:
+                                    "Temperature °C"
+                            }
+                        }
+                    }
+                }
+            }
+        );
+
+
+    annualRainfallChart =
+        new Chart(
+            document.getElementById(
+                "annualRainfallChart"
+            ),
+            {
+                type: "bar",
+
+                data: {
+                    labels: labels,
+
+                    datasets: [
+                        {
+                            label:
+                                "Rainfall",
+
+                            data:
+                                rainfall,
+
+                            borderWidth: 1
+                        }
+                    ]
+                },
+
+                options: {
+                    responsive: true,
+
+                    maintainAspectRatio:
+                        false,
+
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+
+                            title: {
+                                display: true,
+                                text:
+                                    "Rainfall mm"
+                            }
+                        }
+                    }
+                }
+            }
+        );
+
+
+    annualRainDaysChart =
+        new Chart(
+            document.getElementById(
+                "annualRainDaysChart"
+            ),
+            {
+                type: "doughnut",
+
+                data: {
+                    labels: [
+                        "Rainy Days",
+                        "Dry Days"
+                    ],
+
+                    datasets: [
+                        {
+                            data: [
+                                rainyDays.reduce(
+                                    (a, b) => a + b,
+                                    0
+                                ),
+
+                                dryDays.reduce(
+                                    (a, b) => a + b,
+                                    0
+                                )
+                            ],
+
+                            borderWidth: 2
+                        }
+                    ]
+                },
+
+                options: {
+                    responsive: true,
+
+                    maintainAspectRatio:
+                        false,
+
+                    plugins: {
+                        legend: {
+                            position: "bottom"
+                        }
+                    }
+                }
+            }
+        );
+
+
+    annualWindChart =
+        new Chart(
+            document.getElementById(
+                "annualWindChart"
+            ),
+            {
+                type: "line",
+
+                data: {
+                    labels: labels,
+
+                    datasets: [
+                        {
+                            label:
+                                "Average Wind Speed",
+
+                            data:
+                                averageWind,
+
+                            borderWidth: 3,
+
+                            tension: 0.3
+                        },
+
+                        {
+                            label:
+                                "Maximum Wind Speed",
+
+                            data:
+                                maximumWind,
+
+                            borderWidth: 2,
+
+                            borderDash: [
+                                7,
+                                5
+                            ],
+
+                            tension: 0.3
+                        }
+                    ]
+                },
+
+                options: {
+                    responsive: true,
+
+                    maintainAspectRatio:
+                        false,
+
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+
+                            title: {
+                                display: true,
+                                text:
+                                    "Wind Speed km/h"
+                            }
+                        }
+                    }
+                }
+            }
+        );
+}
+
+
+/* ---------------------------------------------------------
+   VALUE HELPERS
+--------------------------------------------------------- */
+
+function firstValue(...values) {
+
+    for (const value of values) {
+
+        if (
+            value !== null &&
+            value !== undefined &&
+            Number.isFinite(Number(value))
+        ) {
+            return Number(value);
+        }
+    }
+
+    return null;
+}
+
+
+function numberValue(...values) {
+
+    const value =
+        firstValue(...values);
+
+    return value === null
+        ? 0
+        : value;
+}
+
+
+function average(values) {
+
+    const valid =
+        values.filter(
+            value =>
+                Number.isFinite(Number(value))
+        );
+
+    if (!valid.length) {
+        return null;
+    }
+
+    return (
+        valid.reduce(
+            (sum, value) =>
+                sum + Number(value),
+            0
+        ) / valid.length
+    );
+}
+
+
+function sum(values) {
+
+    return values.reduce(
+        (total, value) =>
+            total + (
+                Number.isFinite(Number(value))
+                    ? Number(value)
+                    : 0
+            ),
+        0
+    );
+}
+
+
+function maxOf(values) {
+
+    const valid =
+        values.filter(
+            value =>
+                Number.isFinite(Number(value))
+        );
+
+    return valid.length
+        ? Math.max(...valid)
+        : null;
+}
+
+
+function minOf(values) {
+
+    const valid =
+        values.filter(
+            value =>
+                Number.isFinite(Number(value))
+        );
+
+    return valid.length
+        ? Math.min(...valid)
+        : null;
+}
+
+
+function displayNumber(
+    value,
+    suffix = ""
+) {
+
+    if (
+        value === null ||
+        value === undefined ||
+        !Number.isFinite(Number(value))
+    ) {
+        return "--";
+    }
+
+    return (
+        Number(value).toFixed(1) +
+        suffix
+    );
+}
+
+
+function monthLabel(
+    monthNumber,
+    index
+) {
+
+    const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    ];
+
+    const number =
+        Number(monthNumber);
+
+    if (
+        Number.isInteger(number) &&
+        number >= 1 &&
+        number <= 12
+    ) {
+        return months[number - 1];
+    }
+
+    return months[index] || "--";
+}
+
+
+/* ---------------------------------------------------------
+   UPDATE LOCATION STATE
+--------------------------------------------------------- */
+
+function setSelectedLocation(
+    latitude,
+    longitude,
+    timezone
+) {
+
+    selectedLatitude =
+        Number(latitude);
+
+    selectedLongitude =
+        Number(longitude);
+
+    if (timezone) {
+        selectedTimezone =
+            timezone;
+    }
+
+    updateLiveClock();
+}
+
+
+/* ---------------------------------------------------------
+   AUTO REFRESH
+--------------------------------------------------------- */
+
+function startAutoRefresh() {
+
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+    }
+
+    if (annualRefreshTimer) {
+        clearInterval(annualRefreshTimer);
+    }
+
+    autoRefreshTimer =
+        setInterval(
+            function() {
+
+                loadWeather(
+                    selectedLatitude,
+                    selectedLongitude
+                );
+
+            },
+            5 * 60 * 1000
+        );
+
+    annualRefreshTimer =
+        setInterval(
+            function() {
+                loadAnnualWeather();
+            },
+            5 * 60 * 1000
+        );
+}
+
+
+/* ---------------------------------------------------------
+   ANNUAL YEAR CHANGE
+--------------------------------------------------------- */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        initializeYearSelector();
+
+        updateLiveClock();
+
+        setInterval(
+            updateLiveClock,
+            1000
+        );
+
+        startAutoRefresh();
+
+    }
+);
+
+
 /* =========================================================
    ENTER KEY
 ========================================================= */
@@ -2357,10 +3553,20 @@ window.addEventListener(
     "load",
     function() {
 
+        setSelectedLocation(
+            -6.8235,
+            39.2695,
+            "Africa/Dar_es_Salaam"
+        );
+
+        initializeYearSelector();
+
         loadWeather(
             -6.8235,
             39.2695
         );
+
+        loadAnnualWeather();
 
     }
 );
