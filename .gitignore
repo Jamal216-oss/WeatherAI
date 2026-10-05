@@ -1,0 +1,28 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+
+# Environment
+.env
+
+# Logs
+*.log
+
+# Testing
+.pytest_cache/
+
+# Data
+data/*.csv
+
+# Old / large ML models
+models/*.pkl
+
+# Keep production models
+!models/global_temperature_model_production.pkl
+!models/global_rain_model_production.pkl
+!models/global_precipitation_model_production_v2.pkl

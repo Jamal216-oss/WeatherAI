@@ -1,0 +1,199 @@
+import os
+import joblib
+import pandas as pd
+
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# ============================================================
+# WEATHER AI - GLOBAL TEMPERATURE MODEL
+# ============================================================
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DATA_FILE = os.path.join(
+    BASE_DIR,
+    "data",
+    "global_weather_clean.csv"
+)
+
+MODEL_DIR = os.path.join(
+    BASE_DIR,
+    "models"
+)
+
+MODEL_FILE = os.path.join(
+    MODEL_DIR,
+    "global_temperature_model.pkl"
+)
+
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+print()
+print("=" * 70)
+print("              WEATHER AI")
+print("       GLOBAL TEMPERATURE MODEL")
+print("=" * 70)
+
+# ------------------------------------------------------------
+# Load data
+# ------------------------------------------------------------
+
+print()
+print("Loading global dataset...")
+
+df = pd.read_csv(DATA_FILE)
+
+print(f"Total records: {len(df):,}")
+
+# ------------------------------------------------------------
+# Features
+# ------------------------------------------------------------
+
+features = [
+    "temperature_2m",
+    "relative_humidity_2m",
+    "precipitation",
+    "rain",
+    "pressure_msl",
+    "cloud_cover",
+    "wind_speed_10m",
+    "wind_direction_10m",
+    "latitude",
+    "longitude",
+    "hour",
+    "day",
+    "month",
+    "day_of_week",
+    "day_of_year",
+    "hour_sin",
+    "hour_cos",
+    "day_sin",
+    "day_cos"
+]
+
+target = "temperature_next_hour"
+
+X = df[features]
+y = df[target]
+
+# ------------------------------------------------------------
+# Time-based split
+# ------------------------------------------------------------
+
+print()
+print("Creating time-based training/testing split...")
+
+split_index = int(len(df) * 0.80)
+
+X_train = X.iloc[:split_index]
+X_test = X.iloc[split_index:]
+
+y_train = y.iloc[:split_index]
+y_test = y.iloc[split_index:]
+
+print(f"Training records: {len(X_train):,}")
+print(f"Testing records : {len(X_test):,}")
+
+# ------------------------------------------------------------
+# Model
+# ------------------------------------------------------------
+
+print()
+print("Training Random Forest...")
+
+model = RandomForestRegressor(
+    n_estimators=250,
+    max_depth=20,
+    min_samples_split=5,
+    random_state=42,
+    n_jobs=-1
+)
+
+model.fit(
+    X_train,
+    y_train
+)
+
+print("Training complete.")
+
+# ------------------------------------------------------------
+# Predictions
+# ------------------------------------------------------------
+
+print()
+print("Evaluating model...")
+
+predictions = model.predict(X_test)
+
+mae = mean_absolute_error(
+    y_test,
+    predictions
+)
+
+mse = mean_squared_error(
+    y_test,
+    predictions
+)
+
+rmse = mse ** 0.5
+
+r2 = r2_score(
+    y_test,
+    predictions
+)
+
+# ------------------------------------------------------------
+# Results
+# ------------------------------------------------------------
+
+print()
+print("=" * 70)
+print("GLOBAL TEMPERATURE MODEL RESULTS")
+print("=" * 70)
+
+print(f"MAE  : {mae:.4f} °C")
+print(f"RMSE : {rmse:.4f} °C")
+print(f"R²   : {r2:.4f}")
+
+# ------------------------------------------------------------
+# Feature importance
+# ------------------------------------------------------------
+
+importance = pd.DataFrame({
+    "feature": features,
+    "importance": model.feature_importances_
+})
+
+importance = importance.sort_values(
+    "importance",
+    ascending=False
+)
+
+print()
+print("Top feature importance:")
+
+print(
+    importance.head(10).to_string(
+        index=False
+    )
+)
+
+# ------------------------------------------------------------
+# Save model
+# ------------------------------------------------------------
+
+joblib.dump(
+    model,
+    MODEL_FILE
+)
+
+print()
+print("=" * 70)
+print("MODEL SAVED")
+print("=" * 70)
+
+print(MODEL_FILE)
+
+print()
+print("=" * 70)

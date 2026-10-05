@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>WeatherAI - AI Weather Prediction</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f172a, #2563eb);
+            color: white;
+            padding: 25px;
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        header h1 {
+            font-size: 32px;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 25px auto;
+            padding: 0 20px;
+        }
+
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input {
+            flex: 1;
+            min-width: 250px;
+            padding: 13px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #2563eb;
+        }
+
+        button {
+            padding: 13px 22px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .status {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.success {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .location-title {
+            margin: 25px 0 15px;
+        }
+
+        .location-title h2 {
+            font-size: 25px;
+        }
+
+        .location-title p {
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .section-title {
+            margin: 30px 0 15px;
+            font-size: 22px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        .card-title {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .card-subtitle {
+            margin-top: 7px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .ai-card {
+            border-top: 4px solid #2563eb;
+        }
+
+        .condition-card {
+            border-top: 4px solid #0ea5e9;
+        }
+
+        .confidence-card {
+            border-top: 4px solid #7c3aed;
+        }
+
+        .condition-value {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .condition-icon {
+            font-size: 42px;
+            margin-bottom: 8px;
+        }
+
+        .confidence-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        .chart-card h3 {
+            margin-bottom: 15px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        .table-card {
+            background: white;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+        }
+
+        th,
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #374151;
+            font-size: 13px;
+        }
+
+        td {
+            font-size: 13px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .rain {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .no-rain {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .light {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .moderate {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .heavy {
+            background: #fecaca;
+            color: #991b1b;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            margin-top: 30px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 25px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        @media (max-width: 700px) {
+            header h1 {
+                font-size: 25px;
+            }
+
+            .charts {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 280px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="header-container">
+        <h1>🌦️ WeatherAI</h1>
+        <p>AI-Powered Global Weather Prediction System</p>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- SEARCH -->
+    <div class="search-box">
+        <div class="search-row">
+            <input
+                type="text"
+                id="cityInput"
+                placeholder="Enter city name e.g. Dar es Salaam"
+            >
+
+            <button onclick="searchCity()">
+                🔍 Search
+            </button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <div id="loading" class="loading">
+        ⏳ Loading WeatherAI predictions...
+    </div>
+
+    <!-- LOCATION -->
+    <div class="location-title">
+        <h2 id="locationName">Dar es Salaam</h2>
+        <p id="coordinates">
+            Latitude: -6.8235 | Longitude: 39.2695
+        </p>
+    </div>
+
+    <!-- CURRENT WEATHER -->
+    <h2 class="section-title">
+        Current Weather
+    </h2>
+
+    <div class="cards">
+
+        <div class="card">
+            <div class="card-title">
+                🌡️ Temperature
+            </div>
+
+            <div class="card-value" id="currentTemp">
+                --
+            </div>
+
+            <div class="card-subtitle">
+                Current temperature
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                💧 Humidity
+            </div>
+
+            <div class="card-value" id="humidity">
+                --
+            </div>
+
+            <div class="card-subtitle">
+                Relative humidity
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                ☁️ Cloud Cover
+            </div>
+
+            <div class="card-value" id="cloud">
+                --
+            </div>
+
+            <div class="card-subtitle">
+                Cloud coverage
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                💨 Wind
+            </div>
+
+            <div class="card-value" id="wind">
+                --
+            </div>
+
+            <div class="card-subtitle">
+                Wind speed
+            </div>
+        </div>
+
+    </div>
+
+    <!-- AI PREDICTION -->
+    <h2 class="section-title">
+        🤖 WeatherAI Prediction — Next Hour
+    </h2>
+
+    <div class="cards">
+
+        <div class="card ai-card">
+            <div class="card-title">
+                🌡️ AI Temperature
+            </div>
+
+            <div class="card-value" id="aiTemp">
+                --
+            </div>
+
+            <div class="card-subtitle">
+                Predicted temperature
+            </div>
+        </div>
+
+        <div class="card ai-card">
+            <div class="card-title">
+                🌧️ Rain Probability
+            </div>
+
+            <div class="card-value" id="rainProbability">
+                --
+            </div>
+
+            <div class="card-subtitle" id="rainProbabilityLevel">
+                --
+            </div>
+        </div>
+
+        <div class="card ai-card">
+            <div class="card-title">
+                💧 Predicted Rain
+            </div>
+
+            <div class="card-value" id="rainAmount">
+                --
+            </div>
+
+            <div class="card-subtitle" id="rainIntensity">
+                --
+            </div>
+        </div>
+
+        <div class="card condition-card">
+            <div class="card-title">
+                Weather Condition
+            </div>
+
+            <div class="condition-icon" id="weatherIcon">
+                🌤️
+            </div>
+
+            <div class="condition-value" id="weatherCondition">
+                --
+            </div>
+
+            <div class="card-subtitle">
+                AI weather condition
+            </div>
+        </div>
+
+        <div class="card confidence-card">
+            <div class="card-title">
+                🎯 Prediction Confidence
+            </div>
+
+            <div class="confidence-value" id="confidence">
+                --
+            </div>
+
+            <div class="card-subtitle" id="confidenceLevel">
+                --
+            </div>
+        </div>
+
+    </div>
+
+    <!-- CHARTS -->
+    <h2 class="section-title">
+        📊 24-Hour AI Forecast
+    </h2>
+
+    <div class="charts">
+
+        <div class="chart-card">
+            <h3>🌡️ Temperature Forecast</h3>
+
+            <div class="chart-container">
+                <canvas id="temperatureChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>🌧️ Rain Probability</h3>
+
+            <div class="chart-container">
+                <canvas id="rainProbabilityChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>💧 Predicted Precipitation</h3>
+
+            <div class="chart-container">
+                <canvas id="rainAmountChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <h2 class="section-title">
+        📋 Detailed 24-Hour Forecast
+    </h2>
+
+    <div class="table-card">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Condition</th>
+                    <th>Temperature</th>
+                    <th>AI Temperature</th>
+                    <th>Rain</th>
+                    <th>Probability</th>
+                    <th>Rain Amount</th>
+                    <th>Intensity</th>
+                    <th>Confidence</th>
+                    <th>Humidity</th>
+                    <th>Cloud</th>
+                    <th>Wind</th>
+                </tr>
+            </thead>
+
+            <tbody id="forecastTable">
+                <tr>
+                    <td colspan="12">
+                        No forecast data yet.
+                    </td>
+                </tr>
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<footer>
+    WeatherAI © 2026 — AI-powered weather prediction
+</footer>
+
+<script>
+
+const API_URL = "http://127.0.0.1:8000";
+
+let temperatureChart = null;
+let rainProbabilityChart = null;
+let rainAmountChart = null;
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+function showStatus(message, type = "success") {
+
+    const status = document.getElementById("status");
+
+    status.textContent = message;
+    status.className = "status " + type;
+}
+
+
+function setLoading(show) {
+
+    document.getElementById("loading").style.display =
+        show ? "block" : "none";
+}
+
+
+/* =========================================================
+   CITY SEARCH
+========================================================= */
+
+async function searchCity() {
+
+    const city = document
+        .getElementById("cityInput")
+        .value
+        .trim();
+
+    if (!city) {
+
+        showStatus(
+            "Please enter a city name.",
+            "error"
+        );
+
+        return;
+    }
+
+    try {
+
+        setLoading(true);
+
+        showStatus(
+            "Searching for " + city + "...",
+            "success"
+        );
+
+        const url =
+            "https://geocoding-api.open-meteo.com/v1/search" +
+            "?name=" +
+            encodeURIComponent(city) +
+            "&count=1" +
+            "&language=en" +
+            "&format=json";
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Location search failed."
+            );
+        }
+
+        const data = await response.json();
+
+        if (!data.results || data.results.length === 0) {
+
+            throw new Error(
+                "City not found."
+            );
+        }
+
+        const place = data.results[0];
+
+        const latitude = place.latitude;
+        const longitude = place.longitude;
+
+        let name = place.name;
+
+        if (place.country) {
+            name += ", " + place.country;
+        }
+
+        document.getElementById(
+            "locationName"
+        ).textContent = name;
+
+        document.getElementById(
+            "coordinates"
+        ).textContent =
+            "Latitude: " +
+            latitude.toFixed(4) +
+            " | Longitude: " +
+            longitude.toFixed(4);
+
+        await loadWeather(
+            latitude,
+            longitude
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showStatus(
+            error.message,
+            "error"
+        );
+
+    } finally {
+
+        setLoading(false);
+    }
+}
+
+
+/* =========================================================
+   LOAD WEATHER
+========================================================= */
+
+async function loadWeather(
+    latitude,
+    longitude
+) {
+
+    try {
+
+        setLoading(true);
+
+        showStatus(
+            "Loading WeatherAI predictions...",
+            "success"
+        );
+
+        const predictResponse =
+            await fetch(
+                API_URL + "/predict",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        latitude: latitude,
+                        longitude: longitude
+                    })
+                }
+            );
+
+        if (!predictResponse.ok) {
+
+            const errorData =
+                await predictResponse.json()
+                    .catch(() => ({}));
+
+            throw new Error(
+                errorData.detail ||
+                "Prediction request failed."
+            );
+        }
+
+        const prediction =
+            await predictResponse.json();
+
+
+        const forecastResponse =
+            await fetch(
+                API_URL + "/forecast",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        latitude: latitude,
+                        longitude: longitude
+                    })
+                }
+            );
+
+        if (!forecastResponse.ok) {
+
+            const errorData =
+                await forecastResponse.json()
+                    .catch(() => ({}));
+
+            throw new Error(
+                errorData.detail ||
+                "Forecast request failed."
+            );
+        }
+
+        const forecast =
+            await forecastResponse.json();
+
+
+        updateCurrentWeather(
+            prediction
+        );
+
+        updateForecastCharts(
+            forecast.forecast
+        );
+
+        updateForecastTable(
+            forecast.forecast
+        );
+
+        showStatus(
+            "WeatherAI prediction updated successfully.",
+            "success"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showStatus(
+            error.message,
+            "error"
+        );
+
+    } finally {
+
+        setLoading(false);
+    }
+}
+
+
+/* =========================================================
+   UPDATE CURRENT WEATHER
+========================================================= */
+
+function updateCurrentWeather(data) {
+
+    const current =
+        data.current_weather;
+
+    const ai =
+        data.ai_prediction;
+
+
+    document.getElementById(
+        "currentTemp"
+    ).textContent =
+        formatNumber(
+            current.temperature
+        ) + " °C";
+
+
+    document.getElementById(
+        "humidity"
+    ).textContent =
+        formatNumber(
+            current.humidity
+        ) + " %";
+
+
+    document.getElementById(
+        "cloud"
+    ).textContent =
+        formatNumber(
+            current.cloud_cover
+        ) + " %";
+
+
+    document.getElementById(
+        "wind"
+    ).textContent =
+        formatNumber(
+            current.wind_speed
+        ) + " km/h";
+
+
+    document.getElementById(
+        "aiTemp"
+    ).textContent =
+        formatNumber(
+            ai.next_hour_temperature
+        ) + " °C";
+
+
+    document.getElementById(
+        "rainProbability"
+    ).textContent =
+        formatNumber(
+            ai.rain_probability
+        ) + " %";
+
+
+    document.getElementById(
+        "rainProbabilityLevel"
+    ).textContent =
+        ai.rain_probability_level ||
+        "--";
+
+
+    document.getElementById(
+        "rainAmount"
+    ).textContent =
+        formatNumber(
+            ai.predicted_precipitation_mm
+        ) + " mm";
+
+
+    document.getElementById(
+        "rainIntensity"
+    ).textContent =
+        ai.rain_intensity ||
+        "--";
+
+
+    document.getElementById(
+        "weatherIcon"
+    ).textContent =
+        ai.weather_icon ||
+        "🌤️";
+
+
+    document.getElementById(
+        "weatherCondition"
+    ).textContent =
+        ai.weather_condition ||
+        "--";
+
+
+    document.getElementById(
+        "confidence"
+    ).textContent =
+        formatNumber(
+            ai.confidence
+        ) + " %";
+
+
+    document.getElementById(
+        "confidenceLevel"
+    ).textContent =
+        ai.confidence_level ||
+        "--";
+}
+
+
+/* =========================================================
+   CHARTS
+========================================================= */
+
+function updateForecastCharts(
+    forecast
+) {
+
+    const labels =
+        forecast.map(
+            item => formatTime(item.time)
+        );
+
+    const actualTemperature =
+        forecast.map(
+            item => item.temperature
+        );
+
+    const aiTemperature =
+        forecast.map(
+            item => item.ai_temperature
+        );
+
+    const rainProbability =
+        forecast.map(
+            item => item.rain_probability
+        );
+
+    const rainAmount =
+        forecast.map(
+            item => item.precipitation_mm
+        );
+
+
+    if (temperatureChart) {
+        temperatureChart.destroy();
+    }
+
+    if (rainProbabilityChart) {
+        rainProbabilityChart.destroy();
+    }
+
+    if (rainAmountChart) {
+        rainAmountChart.destroy();
+    }
+
+
+    /* TEMPERATURE */
+
+    temperatureChart =
+        new Chart(
+            document.getElementById(
+                "temperatureChart"
+            ),
+            {
+                type: "line",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+                            label: "Weather Forecast",
+                            data: actualTemperature,
+                            borderWidth: 2,
+                            tension: 0.3
+                        },
+
+                        {
+                            label: "WeatherAI Prediction",
+                            data: aiTemperature,
+                            borderWidth: 2,
+                            borderDash: [6, 5],
+                            tension: 0.3
+                        }
+
+                    ]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    },
+
+                    scales: {
+
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Temperature °C"
+                            }
+                        }
+
+                    }
+                }
+            }
+        );
+
+
+    /* RAIN PROBABILITY */
+
+    rainProbabilityChart =
+        new Chart(
+            document.getElementById(
+                "rainProbabilityChart"
+            ),
+            {
+                type: "line",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+                            label: "Rain Probability",
+                            data: rainProbability,
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        }
+
+                    ]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    scales: {
+
+                        y: {
+
+                            min: 0,
+
+                            max: 100,
+
+                            title: {
+                                display: true,
+                                text: "Probability %"
+                            }
+
+                        }
+
+                    }
+                }
+            }
+        );
+
+
+    /* RAIN AMOUNT */
+
+    rainAmountChart =
+        new Chart(
+            document.getElementById(
+                "rainAmountChart"
+            ),
+            {
+                type: "bar",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+                            label: "Predicted Precipitation",
+                            data: rainAmount,
+                            borderWidth: 1
+                        }
+
+                    ]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true,
+
+                            title: {
+                                display: true,
+                                text: "Rainfall mm"
+                            }
+
+                        }
+
+                    }
+                }
+            }
+        );
+}
+
+
+/* =========================================================
+   FORECAST TABLE
+========================================================= */
+
+function updateForecastTable(
+    forecast
+) {
+
+    const table =
+        document.getElementById(
+            "forecastTable"
+        );
+
+    table.innerHTML = "";
+
+
+    forecast.forEach(
+        item => {
+
+            const row =
+                document.createElement("tr");
+
+
+            const rainClass =
+                item.rain &&
+                item.rain.includes("RAIN")
+                    ? "rain"
+                    : "no-rain";
+
+
+            const intensityClass =
+                getIntensityClass(
+                    item.rain_intensity
+                );
+
+
+            row.innerHTML = `
+
+                <td>
+                    ${formatDateTime(item.time)}
+                </td>
+
+                <td>
+                    <span>
+                        ${item.weather_icon || "🌤️"}
+                        ${item.weather_condition || "--"}
+                    </span>
+                </td>
+
+                <td>
+                    ${formatNumber(item.temperature)} °C
+                </td>
+
+                <td>
+                    <strong>
+                        ${formatNumber(item.ai_temperature)} °C
+                    </strong>
+                </td>
+
+                <td>
+                    <span class="badge ${rainClass}">
+                        ${item.rain || "--"}
+                    </span>
+                </td>
+
+                <td>
+                    ${formatNumber(item.rain_probability)} %
+                </td>
+
+                <td>
+                    ${formatNumber(item.precipitation_mm)} mm
+                </td>
+
+                <td>
+                    <span class="badge ${intensityClass}">
+                        ${item.rain_intensity || "--"}
+                    </span>
+                </td>
+
+                <td>
+                    ${formatNumber(item.confidence)} %
+                    <br>
+                    <small>
+                        ${item.confidence_level || ""}
+                    </small>
+                </td>
+
+                <td>
+                    ${formatNumber(item.humidity)} %
+                </td>
+
+                <td>
+                    ${formatNumber(item.cloud_cover)} %
+                </td>
+
+                <td>
+                    ${formatNumber(item.wind_speed)} km/h
+                </td>
+
+            `;
+
+
+            table.appendChild(row);
+        }
+    );
+}
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function formatNumber(
+    value
+) {
+
+    if (
+        value === null ||
+        value === undefined ||
+        isNaN(value)
+    ) {
+        return "--";
+    }
+
+    return Number(value).toFixed(1);
+}
+
+
+function formatTime(
+    value
+) {
+
+    const date =
+        new Date(value);
+
+    if (isNaN(date)) {
+
+        return value
+            .toString()
+            .substring(11, 16);
+    }
+
+    return date.toLocaleTimeString(
+        [],
+        {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+        }
+    );
+}
+
+
+function formatDateTime(
+    value
+) {
+
+    const date =
+        new Date(value);
+
+    if (isNaN(date)) {
+        return value;
+    }
+
+    return date.toLocaleString(
+        [],
+        {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+        }
+    );
+}
+
+
+function getIntensityClass(
+    intensity
+) {
+
+    if (!intensity) {
+        return "";
+    }
+
+    const value =
+        intensity.toUpperCase();
+
+    if (value === "LIGHT") {
+        return "light";
+    }
+
+    if (value === "MODERATE") {
+        return "moderate";
+    }
+
+    if (
+        value === "HEAVY" ||
+        value === "VERY HEAVY"
+    ) {
+        return "heavy";
+    }
+
+    return "no-rain";
+}
+
+
+/* =========================================================
+   ENTER KEY SEARCH
+========================================================= */
+
+document
+    .getElementById("cityInput")
+    .addEventListener(
+        "keydown",
+        function(event) {
+
+            if (event.key === "Enter") {
+                searchCity();
+            }
+
+        }
+    );
+
+
+/* =========================================================
+   INITIAL WEATHER
+========================================================= */
+
+window.addEventListener(
+    "load",
+    function() {
+
+        loadWeather(
+            -6.8235,
+            39.2695
+        );
+
+    }
+);
+
+</script>
+
+</body>
+</html>
