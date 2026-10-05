@@ -9,6 +9,7 @@ import requests
 
 from pathlib import Path
 from datetime import datetime
+from calendar import month_name
 
 
 # ============================================================
@@ -66,6 +67,7 @@ PRECIPITATION_MODEL_PATH = (
 # ============================================================
 
 def load_model(path: Path, model_name: str):
+
     if not path.exists():
         raise FileNotFoundError(
             f"{model_name} not found:\n{path}"
@@ -126,6 +128,7 @@ FEATURES = [
 # ============================================================
 
 class LocationRequest(BaseModel):
+
     latitude: float = Field(
         ...,
         ge=-90,
@@ -256,8 +259,12 @@ def create_features(
     )
 
     features = {
+
         "temperature_2m": float(
-            weather_data.get("temperature_2m", 0)
+            weather_data.get(
+                "temperature_2m",
+                0
+            )
         ),
 
         "relative_humidity_2m": float(
@@ -460,13 +467,21 @@ def get_weather_condition(
 def get_weather_icon(condition: str):
 
     icons = {
+
         "HEAVY RAIN": "🌧️",
+
         "MODERATE RAIN": "🌧️",
+
         "LIGHT RAIN": "🌦️",
+
         "RAIN LIKELY": "🌧️",
+
         "CLOUDY": "☁️",
+
         "PARTLY CLOUDY": "⛅",
+
         "CLEAR": "☀️",
+
     }
 
     return icons.get(
@@ -483,18 +498,33 @@ def get_weather_icon(condition: str):
 def root():
 
     return {
+
         "name": "WeatherAI API",
+
         "version": "1.0.0",
+
         "status": "online",
+
         "models": {
+
             "temperature": "production",
+
             "rain": "production",
+
             "precipitation": "production_v2"
+
         },
+
         "endpoints": [
+
             "/health",
+
             "/predict",
-            "/forecast"
+
+            "/forecast",
+
+            "/annual-weather"
+
         ]
     }
 
@@ -507,11 +537,18 @@ def root():
 def health():
 
     return {
+
         "status": "healthy",
+
         "temperature_model": "loaded",
+
         "rain_model": "loaded",
-        "precipitation_model": "production_v2_loaded",
-        "timestamp": datetime.utcnow().isoformat()
+
+        "precipitation_model":
+            "production_v2_loaded",
+
+        "timestamp":
+            datetime.utcnow().isoformat()
     }
 
 
@@ -627,8 +664,11 @@ def predict(request: LocationRequest):
     return {
 
         "location": {
+
             "latitude": latitude,
+
             "longitude": longitude
+
         },
 
         "current_weather": {
@@ -636,7 +676,9 @@ def predict(request: LocationRequest):
             "time": current["time"],
 
             "temperature": round(
-                float(current["temperature_2m"]),
+                float(
+                    current["temperature_2m"]
+                ),
                 2
             ),
 
@@ -722,7 +764,8 @@ def predict(request: LocationRequest):
             "icon": icon
         },
 
-        "generated_at": datetime.utcnow().isoformat()
+        "generated_at":
+            datetime.utcnow().isoformat()
     }
 
 
@@ -786,7 +829,10 @@ def get_forecast_weather(
 
         raise HTTPException(
             status_code=502,
-            detail=f"Weather forecast service error: {str(e)}"
+            detail=(
+                "Weather forecast service error: "
+                f"{str(e)}"
+            )
         )
 
 
@@ -811,6 +857,7 @@ def forecast(request: LocationRequest):
     )
 
     if "hourly" not in data:
+
         raise HTTPException(
             status_code=502,
             detail="Hourly forecast data not available."
@@ -822,7 +869,10 @@ def forecast(request: LocationRequest):
     # Current time from Open-Meteo
     # --------------------------------------------------------
 
-    if "current" in data and "time" in data["current"]:
+    if (
+        "current" in data
+        and "time" in data["current"]
+    ):
 
         current_time = pd.to_datetime(
             data["current"]["time"]
@@ -843,11 +893,7 @@ def forecast(request: LocationRequest):
     )
 
     # --------------------------------------------------------
-    # Find the FIRST hour after current time
-    #
-    # Example:
-    # current = 15:45
-    # forecast starts = 16:00
+    # Find first hour after current time
     # --------------------------------------------------------
 
     future_indices = np.where(
@@ -1065,11 +1111,443 @@ def forecast(request: LocationRequest):
             "latitude": latitude,
 
             "longitude": longitude
+
         },
 
-        "forecast_horizon": "Next 24 Hours",
+        "forecast_horizon":
+            "Next 24 Hours",
 
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at":
+            datetime.utcnow().isoformat(),
 
-        "forecast": forecast_results
+        "forecast":
+            forecast_results
+    }
+
+
+# ============================================================
+# ANNUAL WEATHER STATISTICS
+# ============================================================
+
+@app.get("/annual-weather")
+def annual_weather(
+    latitude: float,
+    longitude: float,
+    year: int
+):
+
+    """
+    Generate monthly and annual weather statistics
+    for a specific location and year using
+    Open-Meteo historical weather data.
+    """
+
+    # --------------------------------------------------------
+    # Validate location
+    # --------------------------------------------------------
+
+    validate_location(
+        latitude,
+        longitude
+    )
+
+    # --------------------------------------------------------
+    # Validate year
+    # --------------------------------------------------------
+
+    current_year = datetime.now().year
+
+    if year < 1940 or year > current_year:
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Year must be between "
+                f"1940 and {current_year}."
+            )
+        )
+
+    # --------------------------------------------------------
+    # Open-Meteo historical API
+    # --------------------------------------------------------
+
+    url = (
+        "https://archive-api.open-meteo.com/v1/archive"
+    )
+
+    params = {
+
+        "latitude": latitude,
+
+        "longitude": longitude,
+
+        "start_date": f"{year}-01-01",
+
+        "end_date": f"{year}-12-31",
+
+        "daily": (
+            "temperature_2m_mean,"
+            "temperature_2m_max,"
+            "temperature_2m_min,"
+            "precipitation_sum,"
+            "rain_sum,"
+            "precipitation_hours,"
+            "wind_speed_10m_max"
+        ),
+
+        "timezone": "auto"
+    }
+
+    # --------------------------------------------------------
+    # Request historical data
+    # --------------------------------------------------------
+
+    try:
+
+        response = requests.get(
+            url,
+            params=params,
+            timeout=30
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+    except requests.RequestException as e:
+
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Unable to retrieve historical "
+                f"weather data: {str(e)}"
+            )
+        )
+
+    # --------------------------------------------------------
+    # Check daily data
+    # --------------------------------------------------------
+
+    daily = data.get("daily")
+
+    if not daily:
+
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "No historical weather data "
+                "found for this location."
+            )
+        )
+
+    # --------------------------------------------------------
+    # Create DataFrame
+    # --------------------------------------------------------
+
+    df = pd.DataFrame({
+
+        "date": daily.get(
+            "time",
+            []
+        ),
+
+        "temperature_mean": daily.get(
+            "temperature_2m_mean",
+            []
+        ),
+
+        "temperature_max": daily.get(
+            "temperature_2m_max",
+            []
+        ),
+
+        "temperature_min": daily.get(
+            "temperature_2m_min",
+            []
+        ),
+
+        "precipitation": daily.get(
+            "precipitation_sum",
+            []
+        ),
+
+        "rain": daily.get(
+            "rain_sum",
+            []
+        ),
+
+        "precipitation_hours": daily.get(
+            "precipitation_hours",
+            []
+        ),
+
+        "wind_speed": daily.get(
+            "wind_speed_10m_max",
+            []
+        )
+    })
+
+    if df.empty:
+
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Historical weather dataset "
+                "is empty."
+            )
+        )
+
+    # --------------------------------------------------------
+    # Prepare data
+    # --------------------------------------------------------
+
+    df["date"] = pd.to_datetime(
+        df["date"]
+    )
+
+    df["month"] = df[
+        "date"
+    ].dt.month
+
+    # Replace missing values with zero
+    # where appropriate
+    df["rain"] = df[
+        "rain"
+    ].fillna(0)
+
+    df["precipitation"] = df[
+        "precipitation"
+    ].fillna(0)
+
+    df["precipitation_hours"] = df[
+        "precipitation_hours"
+    ].fillna(0)
+
+    # --------------------------------------------------------
+    # Rainy / dry day classification
+    # --------------------------------------------------------
+
+    df["rainy_day"] = (
+        df["rain"] > 0
+    )
+
+    df["dry_day"] = (
+        df["rain"] <= 0
+    )
+
+    # --------------------------------------------------------
+    # MONTHLY STATISTICS
+    # --------------------------------------------------------
+
+    monthly = []
+
+    for month in range(1, 13):
+
+        month_df = df[
+            df["month"] == month
+        ]
+
+        if month_df.empty:
+            continue
+
+        monthly.append({
+
+            "month":
+                month_name[month],
+
+            "month_number":
+                month,
+
+            "average_temperature":
+                round(
+                    month_df[
+                        "temperature_mean"
+                    ].mean(),
+                    2
+                ),
+
+            "maximum_temperature":
+                round(
+                    month_df[
+                        "temperature_max"
+                    ].max(),
+                    2
+                ),
+
+            "minimum_temperature":
+                round(
+                    month_df[
+                        "temperature_min"
+                    ].min(),
+                    2
+                ),
+
+            "rainfall_mm":
+                round(
+                    month_df[
+                        "precipitation"
+                    ].sum(),
+                    2
+                ),
+
+            "rain_mm":
+                round(
+                    month_df[
+                        "rain"
+                    ].sum(),
+                    2
+                ),
+
+            "rainy_days":
+                int(
+                    month_df[
+                        "rainy_day"
+                    ].sum()
+                ),
+
+            "dry_days":
+                int(
+                    month_df[
+                        "dry_day"
+                    ].sum()
+                ),
+
+            "precipitation_hours":
+                round(
+                    month_df[
+                        "precipitation_hours"
+                    ].sum(),
+                    2
+                ),
+
+            "average_wind_speed":
+                round(
+                    month_df[
+                        "wind_speed"
+                    ].mean(),
+                    2
+                ),
+
+            "maximum_wind_speed":
+                round(
+                    month_df[
+                        "wind_speed"
+                    ].max(),
+                    2
+                )
+        })
+
+    # --------------------------------------------------------
+    # ANNUAL SUMMARY
+    # --------------------------------------------------------
+
+    annual_summary = {
+
+        "average_temperature":
+            round(
+                df[
+                    "temperature_mean"
+                ].mean(),
+                2
+            ),
+
+        "maximum_temperature":
+            round(
+                df[
+                    "temperature_max"
+                ].max(),
+                2
+            ),
+
+        "minimum_temperature":
+            round(
+                df[
+                    "temperature_min"
+                ].min(),
+                2
+            ),
+
+        "total_rainfall_mm":
+            round(
+                df[
+                    "precipitation"
+                ].sum(),
+                2
+            ),
+
+        "total_rain_mm":
+            round(
+                df[
+                    "rain"
+                ].sum(),
+                2
+            ),
+
+        "rainy_days":
+            int(
+                df[
+                    "rainy_day"
+                ].sum()
+            ),
+
+        "dry_days":
+            int(
+                df[
+                    "dry_day"
+                ].sum()
+            ),
+
+        "precipitation_hours":
+            round(
+                df[
+                    "precipitation_hours"
+                ].sum(),
+                2
+            ),
+
+        "average_wind_speed":
+            round(
+                df[
+                    "wind_speed"
+                ].mean(),
+                2
+            ),
+
+        "maximum_wind_speed":
+            round(
+                df[
+                    "wind_speed"
+                ].max(),
+                2
+            )
+    }
+
+    # --------------------------------------------------------
+    # FINAL RESPONSE
+    # --------------------------------------------------------
+
+    return {
+
+        "status": "success",
+
+        "location": {
+
+            "latitude":
+                latitude,
+
+            "longitude":
+                longitude
+        },
+
+        "year":
+            year,
+
+        "annual_summary":
+            annual_summary,
+
+        "monthly":
+            monthly,
+
+        "generated_at":
+            datetime.utcnow().isoformat()
     }
